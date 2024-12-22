@@ -1,3 +1,3 @@
 # Event GO
 
-Broadcast server side events by sending HTTP calls.
+Broadcast server sent events by sending HTTP calls.

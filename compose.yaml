@@ -1,0 +1,16 @@
+services:
+  event-go:
+    container_name: event-go
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      BASIC_AUTH_USER: admin
+      BASIC_AUTH_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    volumes:
+      - sqlite_data:event-go.sqlite
+
+volumes:
+  sqlite_data:
