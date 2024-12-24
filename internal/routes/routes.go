@@ -9,13 +9,13 @@ import (
 
 func SetupRouter(config config.Config, db *gorm.DB) *gin.Engine {
 	router := gin.Default()
-	stream := NewServer()
+	stream := NewServer(db)
 
 	authorized := router.Group("/authorized", gin.BasicAuth(gin.Accounts{
 		config.BasicAuthUser: config.BasicAuthPassword,
 	}))
 
-	router.GET("/events", EventStreamHeadersMiddleware(), stream.serveHTTP(), GetEvents(config, db))
+	router.GET("/events", EventStreamHeadersMiddleware(), stream.serveHTTP(), GetEvents(config))
 	authorized.POST("/events", PostEvent(config, db, stream))
 
 	return router

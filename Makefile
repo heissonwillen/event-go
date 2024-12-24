@@ -1,4 +1,4 @@
-.PHONY: build build-debug up up-debug down logs dbshell start-db stop-db test
+.PHONY: build build-debug up down logs test
 
 build:
 	docker-compose build
