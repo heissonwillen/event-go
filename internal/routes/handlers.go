@@ -7,15 +7,20 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/heissonwillen/event-go/internal/config"
+	"github.com/heissonwillen/event-go/internal/models"
 	"gorm.io/gorm"
 )
 
 type Event struct {
-	Data          chan string
-	Type          chan string
-	NewClients    chan chan string
-	ClosedClients chan chan string
-	TotalClients  map[chan string]bool
+	Messages      chan EventMessage
+	NewClients    chan chan EventMessage
+	ClosedClients chan chan EventMessage
+	TotalClients  map[chan EventMessage]bool
+}
+
+type EventMessage struct {
+	Data string
+	Type string
 }
 
 type PostEventRequestBody struct {
@@ -23,9 +28,8 @@ type PostEventRequestBody struct {
 	Type string `json:"type" binding:"required"`
 }
 
-type ClientChan chan string
+type ClientChan chan EventMessage
 
-// TODO: store data on DB
 func PostEvent(config config.Config, db *gorm.DB, stream *Event) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var requestBody PostEventRequestBody
@@ -34,12 +38,15 @@ func PostEvent(config config.Config, db *gorm.DB, stream *Event) gin.HandlerFunc
 			return
 		}
 
-		log.Printf("Parsed request")
-		stream.Data <- requestBody.Data
-		// stream.Type <- requestBody.Type
-		log.Printf("Got stream.Data")
-		stream.Type <- "temperature"
-		log.Printf("Sending JSON back")
+		eventMessage := EventMessage(requestBody)
+
+		stream.Messages <- eventMessage
+
+		eventDB := models.Event{
+			Data: requestBody.Data,
+			Type: requestBody.Type,
+		}
+		db.Create(&eventDB)
 
 		ctx.JSON(http.StatusOK, gin.H{
 			"data": requestBody.Data,
@@ -48,8 +55,8 @@ func PostEvent(config config.Config, db *gorm.DB, stream *Event) gin.HandlerFunc
 	}
 }
 
-// TODO: return record from DB if no stream ever happened
-func GetEvents(config config.Config, db *gorm.DB) gin.HandlerFunc {
+// GetEvents streams events to connected clients
+func GetEvents(config config.Config) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		v, ok := ctx.Get("clientChan")
 		if !ok {
@@ -60,8 +67,8 @@ func GetEvents(config config.Config, db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 		ctx.Stream(func(w io.Writer) bool {
-			if data, ok := <-clientChan; ok {
-				ctx.SSEvent("message", data)
+			if event, ok := <-clientChan; ok {
+				ctx.SSEvent(event.Type, event.Data)
 				return true
 			}
 			return false
@@ -69,40 +76,48 @@ func GetEvents(config config.Config, db *gorm.DB) gin.HandlerFunc {
 	}
 }
 
-func NewServer() (event *Event) {
+// NewServer initializes the Event struct and starts listening for events
+func NewServer(db *gorm.DB) (event *Event) {
 	event = &Event{
-		Data:          make(chan string),
-		Type:          make(chan string),
-		NewClients:    make(chan chan string),
-		ClosedClients: make(chan chan string),
-		TotalClients:  make(map[chan string]bool),
+		Messages:      make(chan EventMessage),
+		NewClients:    make(chan chan EventMessage),
+		ClosedClients: make(chan chan EventMessage),
+		TotalClients:  make(map[chan EventMessage]bool),
 	}
 
-	go event.listen()
+	go event.listen(db)
 
 	return
 }
 
-func (stream *Event) listen() {
+// listen handles broadcasting events to clients and managing client connections
+func (stream *Event) listen(db *gorm.DB) {
 	for {
 		select {
 		case client := <-stream.NewClients:
 			stream.TotalClients[client] = true
 			log.Printf("Client added. %d registered clients", len(stream.TotalClients))
 
+			// Propagate latest event to all clients once there's a new connection
+			var latestEvent models.Event
+			if err := db.Order("created_at DESC").First(&latestEvent).Error; err == nil {
+				message := EventMessage{
+					Data: latestEvent.Data,
+					Type: latestEvent.Type,
+				}
+				for clientChan := range stream.TotalClients {
+					clientChan <- message
+				}
+			}
+
 		case client := <-stream.ClosedClients:
 			delete(stream.TotalClients, client)
 			close(client)
 			log.Printf("Removed client. %d registered clients", len(stream.TotalClients))
 
-		case eventData := <-stream.Data:
-			for clientDataChan := range stream.TotalClients {
-				clientDataChan <- eventData
-			}
-
-		case eventType := <-stream.Type:
-			for clientTypeChan := range stream.TotalClients {
-				clientTypeChan <- eventType
+		case message := <-stream.Messages:
+			for clientChan := range stream.TotalClients {
+				clientChan <- message
 			}
 		}
 	}

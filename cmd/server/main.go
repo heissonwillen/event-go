@@ -18,7 +18,7 @@ func main() {
 	config := config.LoadConfig()
 
 	db := database.InitDB(config)
-	db.AutoMigrate(&models.Send{})
+	db.AutoMigrate(&models.Event{})
 
 	router := routes.SetupRouter(config, db)
 

@@ -7,10 +7,11 @@ services:
     environment:
       BASIC_AUTH_USER: admin
       BASIC_AUTH_PASSWORD: admin
+      SQLITE_DB_PATH: /tmp/db.sqlite
     ports:
       - "8080:8080"
     volumes:
-      - sqlite_data:event-go.sqlite
+      - ./tmp/db.sqlite:/tmp/db.sqlite
 
 volumes:
   sqlite_data:
