@@ -18,17 +18,13 @@ Broadcast server sent events by sending HTTP calls.
   - [Table of contents](#table-of-contents)
   - [Features](#features)
   - [Docker deployment](#docker-deployment)
-    - [Production `docker-compose.yml`](#production-docker-composeyml)
   - [Installation](#installation)
     - [Prerequisites](#prerequisites)
     - [Clone the repository](#clone-the-repository)
-  - [Build and Run](#build-and-run)
+  - [Build and run](#build-and-run)
     - [Local setup](#local-setup)
-    - [Debug setup](#debug-setup)
-    - [Stopping services](#stopping-services)
     - [Running tests](#running-tests)
   - [Configuration](#configuration)
-    - [Using `.env` File](#using-env-file)
     - [Environment variables](#environment-variables)
   - [Endpoints](#endpoints)
   - [Contributing](#contributing)
@@ -48,10 +44,10 @@ Broadcast server sent events by sending HTTP calls.
 ---
 
 ## Docker deployment
-
-### Production `docker-compose.yml`
-
-> docker-compose.prod.sample.yaml
+Pulls the image from the Docker registry and runs it locally using [`compose.sample.yaml`](./compose.sample.yaml)
+```bash
+docker compose --file compose.sample.yaml up -d
+```
 
 ---
 ## Installation
@@ -69,58 +65,35 @@ cd event-go
 ```
 ---
 
-## Build and Run
+## Build and run
 
 ### Local setup
 
-To build and run event-go in production mode:
-
+To download the dependencies, and have the hot-reloading locally
 ```bash
-make build      # Build the Docker images
-make up         # Start the services
+go mod tidy && air
 ```
-
-### Debug setup
-
-To build and run event-go in debug mode:
-
+Alternatively, it's possible to run without hot-reloading (`air`)
 ```bash
-make build-debug   # Build the Docker images with debug mode enabled
-make up            # Start the services in debug mode
-```
-
-### Stopping services
-
-```bash
-make down
+go mod tidy && go run -v cmd/server/main.go
 ```
 
 ### Running tests
 
 ```bash
-make test
+go test ./... -v
 ```
 
 ## Configuration
 
-### Using `.env` File
-
-Create a `.env` file in the project root to securely store your secrets:
-
-```env
-BASIC_AUTH_USER=admin
-BASIC_AUTH_PASSWORD=admin
-SQLITE_DB_PATH=tmp/db.sqlite
-```
-
 ### Environment variables
 
-| Variable              | Description                          | Default Value     |
-| --------------------- | ------------------------------------ | ----------------- |
-| `LISTEN_ADDR`         | API listen address                   | `:8080`           |
-| `SQLITE_DB_PATH`      | SQLite DB path                       | `event-go.sqlite` |
-| `BASIC_AUTH_USER`     | Username for `/authorized` endpoints | `-`               |
-| `BASIC_AUTH_PASSWORD` | Password for `/authorized` endpoints | `-`               |
+| Variable              | Description                          | Default Value         |
+| --------------------- | ------------------------------------ | --------------------- |
+| `LISTEN_ADDR`         | API listen address                   | `:8080`               |
+| `SQLITE_DB_PATH`      | SQLite DB path                       | `tmp/event-go.sqlite` |
+| `BASIC_AUTH_USER`     | Username for `/authorized` endpoints | `admin`               |
+| `BASIC_AUTH_PASSWORD` | Password for `/authorized` endpoints | `pass`                |
 
 ---
 
