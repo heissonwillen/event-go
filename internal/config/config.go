@@ -22,7 +22,15 @@ func LoadConfig() Config {
 	}
 
 	if config.SQLiteDBPath == "" {
-		config.SQLiteDBPath = "event-go.sqlite"
+		config.SQLiteDBPath = "tmp/event-go.sqlite"
+	}
+
+	if config.BasicAuthUser == "" {
+		config.BasicAuthUser = "admin"
+	}
+
+	if config.BasicAuthPassword == "" {
+		config.BasicAuthPassword = "pass"
 	}
 
 	return config

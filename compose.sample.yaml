@@ -1,0 +1,16 @@
+services:
+  event-go:
+    container_name: event-go
+    image: heissonwillen/event-go:0.3
+    environment:
+      LISTEN_ADDR: ":8080"
+      BASIC_AUTH_USER: admin
+      BASIC_AUTH_PASSWORD: super-secure-pass
+      SQLITE_DB_PATH: /tmp/event-go-compose.sqlite
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./tmp:/tmp
+
+volumes:
+  sqlite_data:
