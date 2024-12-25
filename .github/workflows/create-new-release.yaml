@@ -53,8 +53,8 @@ jobs:
           tags: |
             type=ref,event=branch
             type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{version}},value=${{ needs.deploy.outputs.semver_next }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.deploy.outputs.semver_next }}
 
       - name: Login to DockerHub
         if: github.event_name != 'pull_request'
