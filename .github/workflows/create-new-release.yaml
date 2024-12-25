@@ -1,17 +1,46 @@
 name: Release
 
-# Only trigger this action when a new release is published
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
 
 jobs:
+  deploy:
+    name: Generate new tag and create a new release
+    runs-on: ubuntu-latest
+    permissions:
+        contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get next version based on semver
+        id: semver
+        uses: ietf-tools/semver-action@v1
+        with:
+          token: ${{ github.token }}
+          branch: main
+
+      - name: Create new tag and release based on semver
+        uses: ncipollo/release-action@v1.12.0
+        with:
+          allowUpdates: true
+          draft: false
+          makeLatest: true
+          name: ${{ steps.semver.outputs.next }}
+          body: "**Full Changelog**: https://github.com/heissonwillen/event-go/compare/${{ steps.semver.outputs.current }}...${{ steps.semver.outputs.next }}"
+          token: ${{ github.token }}
+          tag: ${{ steps.semver.outputs.next }}
+          commit: main
+
   docker:
     name: Build Docker image and push to Docker Hub
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
@@ -23,13 +52,15 @@ jobs:
             type=ref,event=pr
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
+
       - name: Login to DockerHub
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Build and push
+
+      - name: Build and push image 
         uses: docker/build-push-action@v5
         with:
           context: .
