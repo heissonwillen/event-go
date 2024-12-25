@@ -8,7 +8,7 @@ Broadcast server sent events by sending HTTP calls.
 ![Coveralls](https://img.shields.io/coverallsCoverage/github/heissonwillen/event-go)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/heissonwillen/event-go)
 
-<!-- TODO: add demo video -->
+![Event Go demo](./assets/demo.gif)
 <!-- TODO: add demo env -->
 ---
 
