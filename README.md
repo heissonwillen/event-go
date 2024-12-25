@@ -44,9 +44,13 @@ Broadcast server sent events by sending HTTP calls.
 ---
 
 ## Docker deployment
-Pulls the image from the Docker registry and runs it locally using [`compose.sample.yaml`](./compose.sample.yaml)
+To pull the image from the Docker registry and run it locally using [`compose.sample.yaml`](./compose.sample.yaml)
 ```bash
 docker compose --file compose.sample.yaml up -d
+```
+Alternatively, to build and run the local [`Dockerfile`](./Dockerfile) (useful for debugging purposes)
+```bash
+docker compose --file compose.dev.yaml up -d
 ```
 
 ---

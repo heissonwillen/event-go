@@ -1,0 +1,12 @@
+services:
+  event-go:
+    container_name: event-go
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      SQLITE_DB_PATH: /tmp/event-go-compose-dev.sqlite
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./tmp:/tmp
