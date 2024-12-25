@@ -1,5 +1,5 @@
 # SQLites needs build-essential and libsqlite3, that's why Debian is used here
-FROM golang:1.22-bookworm AS build
+FROM golang:1.23-bookworm AS build
 
 WORKDIR /src
 COPY . /src/
