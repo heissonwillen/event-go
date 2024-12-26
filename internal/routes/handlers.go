@@ -98,15 +98,26 @@ func (stream *Event) listen(db *gorm.DB) {
 			stream.TotalClients[client] = true
 			log.Printf("Client added. %d registered clients", len(stream.TotalClients))
 
-			// Propagate latest event to all clients once there's a new connection
-			var latestEvent models.Event
-			if err := db.Order("created_at DESC").First(&latestEvent).Error; err == nil {
-				message := EventMessage{
-					Data: latestEvent.Data,
-					Type: latestEvent.Type,
-				}
-				for clientChan := range stream.TotalClients {
-					clientChan <- message
+			// Propagate the latest event of each type to all clients once there's a new connection
+			var latestEvents []models.Event
+
+			// Query to get the latest event of each type
+			if err := db.Raw(`
+				SELECT *
+				FROM (
+					SELECT *, ROW_NUMBER() OVER (PARTITION BY type ORDER BY created_at DESC) AS row_num
+					FROM events
+				) subquery
+				WHERE row_num = 1
+			`).Scan(&latestEvents).Error; err == nil {
+				for _, latestEvent := range latestEvents {
+					message := EventMessage{
+						Data: latestEvent.Data,
+						Type: latestEvent.Type,
+					}
+					for clientChan := range stream.TotalClients {
+						clientChan <- message
+					}
 				}
 			}
 
